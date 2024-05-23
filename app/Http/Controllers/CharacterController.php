@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\RequestException;
-use GuzzleHttp\Psr7\Message;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -51,13 +50,31 @@ class CharacterController extends Controller
     }
 
     /**
-     * Display the specified resource.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
+     * @param int $id
+     * 
+     * @return JsonResponse
      */
-    public function show($id)
+    public function show($id): JsonResponse
     {
-        //
+        $data = [];
+
+        try {
+            $response = $this->httpClient->request(
+                'GET',
+                "character/{$id}",
+            );
+
+            $data = json_decode($response->getBody()->getContents(), true);
+        } catch (RequestException $e) {
+            $statusCode = $e->hasResponse() ? $e->getResponse()->getStatusCode() : 500;
+            $errorMessage = $e->hasResponse() ? $e->getResponse()->getBody()->getContents() : $e->getMessage();
+
+            return response()->json([
+                'error' => 'Unable to fetch data',
+                'message' => $errorMessage
+            ], $statusCode);
+        }
+
+        return response()->json($data);
     }
 }
